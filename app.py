@@ -5,7 +5,7 @@ from datetime import datetime
 
 st.set_page_config(page_title="우리동네 마트 공구 대장", layout="wide")
 
-# 로직: 지침에 따른 예약번호 세팅 [2026-02-20]
+# 로직: 예약번호 세팅 [2026-02-20]
 def get_reservation_id(nickname):
     numbers = re.findall(r'\d+', nickname)
     if numbers:
@@ -15,68 +15,88 @@ def get_reservation_id(nickname):
 if 'db' not in st.session_state:
     st.session_state.db = []
 
-st.title("🛒 우리동네 마트 스마트 공구")
+st.title("🛒 우리동네 마트 한눈에 공구")
 
-# 탭을 나눠서 주문하기와 내역 확인을 구분
-tab1, tab2 = st.tabs(["📝 주문하기", "🔍 내 주문 확인"])
+tab1, tab2 = st.tabs(["📝 한눈에 주문하기", "🔍 내 주문 확인"])
 
+# --- [1] 리스트형 주문 화면 ---
 with tab1:
-    with st.form("multi_order_form", clear_on_submit=True):
-        st.subheader("주문서를 작성해 주세요")
+    st.subheader("📦 오늘 장보기 리스트")
+    st.caption("원하는 상품의 수량을 조절하신 후 하단의 '주문하기' 버튼을 눌러주세요.")
+
+    # 상품 리스트 정의 (여기에 상품을 계속 추가하시면 됩니다)
+    # [2026-02-19] 공백 포함 상품명 반영
+    products = [
+        {"이름": "빵빠레 초코1", "가격": "1,500원"},
+        {"이름": "신선 딸기 500g", "가격": "9,800원"},
+        {"이름": "여성용품(생리대) 특가", "가격": "12,000원"},
+        {"이름": "삼겹살 600g", "가격": "15,000원"},
+        {"이름": "대란 30구", "가격": "6,500원"},
+        {"이름": "라면 번들(5입)", "가격": "4,500원"}
+    ]
+
+    order_quantities = {}
+    
+    # 상품을 표 형태로 나열
+    for p in products:
+        col_name, col_price, col_qty = st.columns([2, 1, 1])
+        with col_name:
+            st.write(f"**{p['이름']}**")
+        with col_price:
+            st.write(p['가격'])
+        with col_qty:
+            # 수량 선택 (기본 0)
+            order_quantities[p['이름']] = st.number_input("수량", min_value=0, value=0, key=f"qty_{p['이름']}", label_visibility="collapsed")
+
+    st.divider()
+    
+    # 주문 결정 구간
+    final_items = {k: v for k, v in order_quantities.items() if v > 0}
+    
+    if final_items:
+        st.write("### 🛒 선택한 상품")
+        for k, v in final_items.items():
+            st.write(f"- {k} : {v}개")
         
-        # [2026-02-19] 공백이 포함된 상품명도 정확히 처리
-        available_products = ["빵빠레 초코1", "신선 딸기 500g", "여성용품(생리대) 특가", "삼겹살 600g", "대란 30구"]
-        selected_items = st.multiselect("상품 선택", available_products)
+        nickname = st.text_input("카카오톡 닉네임 입력 (필수)", placeholder="예: 홍길동1234")
         
-        order_details = {}
-        if selected_items:
-            for item in selected_items:
-                order_details[item] = st.number_input(f"[{item}] 수량", min_value=1, value=1, key=f"order_{item}")
-        
-        nickname = st.text_input("카카오톡 닉네임 입력", placeholder="예: 홍길동1234")
-        submit = st.form_submit_button("주문 완료")
-        
-        if submit:
+        if st.button("🚀 위 내역으로 주문 확정하기"):
             if not nickname:
-                st.error("닉네임을 입력해 주세요!")
-            elif not selected_items:
-                st.error("상품을 선택해 주세요!")
+                st.error("닉네임을 입력해 주셔야 주문이 접수됩니다!")
             else:
                 res_id = get_reservation_id(nickname)
-                summary = ", ".join([f"{k}({v})" for k, v in order_details.items()])
+                summary = ", ".join([f"{k}({v})" for k, v in final_items.items()])
                 
                 new_order = {
                     "주문시간": datetime.now().strftime("%m-%d %H:%M"),
-                    "예약번호": res_id,
+                    "예약번호": str(res_id),
                     "닉네임": nickname,
                     "주문내역": summary,
                     "상태": "접수완료"
                 }
                 st.session_state.db.append(new_order)
-                st.success(f"✅ 주문 완료! 예약번호는 [{res_id}] 입니다.")
+                st.success(f"✅ 주문 완료! 예약번호는 [{res_id}] 입니다. 매장에서 닉네임을 말씀해 주세요.")
+    else:
+        st.info("상품 수량을 1개 이상 선택하시면 주문 버튼이 나타납니다.")
 
+# --- [2] 조회 화면 ---
 with tab2:
-    st.subheader("내 주문 내역 찾기")
-    search_nick = st.text_input("주문 시 입력한 닉네임을 입력하세요")
-    
-    if search_nick:
-        # 입력한 닉네임과 일치하는 데이터만 필터링
-        my_orders = [o for o in st.session_state.db if o['닉네임'] == search_nick]
-        
+    st.subheader("🔍 내 주문 찾기")
+    search_query = st.text_input("닉네임 또는 예약번호를 입력하세요")
+    if search_query:
+        my_orders = [o for o in st.session_state.db if o['닉네임'] == search_query or o['예약번호'] == search_query]
         if my_orders:
-            st.write(f"✨ {search_nick}님의 주문 내역입니다.")
-            st.table(pd.DataFrame(my_orders)[["주문시간", "주문내역", "상태"]])
+            st.table(pd.DataFrame(my_orders)[["주문시간", "예약번호", "주문내역", "상태"]])
         else:
-            st.warning("입력하신 닉네임으로 된 주문 내역이 없습니다.")
+            st.warning("내역이 없습니다. 정보를 확인해 주세요.")
 
-# --- 사장님 전용 관리 도구 (비공개 처리 권장) ---
+# --- 사장님 관리 도구 ---
 st.markdown("---")
 with st.expander("🔐 사장님 관리 도구"):
     if st.session_state.db:
         df = pd.DataFrame(st.session_state.db)
-        st.dataframe(df)
-        
+        st.dataframe(df, use_container_width=True)
         csv = df.to_csv(index=False).encode('utf-8-sig')
-        st.download_button("📥 엑셀 다운로드", data=csv, file_name='orders.csv')
+        st.download_button("📥 엑셀로 한꺼번에 다운로드", data=csv, file_name='today_orders.csv')
     else:
-        st.write("주문이 없습니다.")
+        st.write("접수된 주문이 아직 없습니다.")
