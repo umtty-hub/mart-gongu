@@ -10,7 +10,7 @@ URL = "https://docs.google.com/spreadsheets/d/1a4UxIF3umGoGF4ZWc7BjwuMEiXj2NG5OF
 conn = st.connection("gsheets", type=GSheetsConnection)
 
 try:
-df_p = conn.read(spreadsheet=URL, worksheet="products", ttl=0)
+    df_p = conn.read(spreadsheet=URL, worksheet="products", ttl=0)
 st.title("🛒 마트 초간편 주문")
 t1, t2 = st.tabs(["📝 주문하기", "🔍 주문확인"])
 
