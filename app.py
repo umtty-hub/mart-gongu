@@ -1,5 +1,5 @@
 import streamlit as st
-from medical_gsheets import GSheetsConnection # 구글 시트 연결 도구
+from streamlit_gsheets import GSheetsConnection # 구글 시트 연결 도구
 import pandas as pd
 import re
 from datetime import datetime
