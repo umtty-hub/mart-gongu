@@ -5,7 +5,7 @@ from datetime import datetime
 
 st.set_page_config(page_title="마트 주문판", layout="wide")
 
-URL = ""
+URL = "https://docs.google.com/spreadsheets/d/1a4UxIF3umGoGF4ZWc7BjwuMEiXj2NG5OFn7TO5H3lb4/edit?gid=0#gid=0"
 
 conn = st.connection("gsheets", type=GSheetsConnection)
 
