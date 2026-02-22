@@ -19,8 +19,8 @@ if 'db' not in st.session_state:
     st.session_state.db = []
 
 # --- [1] 사용자 주문 화면 ---
-st.title("🛒 우리동네 마트 실시간 공구")
-st.info("카톡 닉네임을 입력하고 원하는 상품을 주문하세요!")
+st.title("🛒 GS THE FRESH 동래래미안점 공동구매 주문 창")
+st.info("예약번호를 입력하고 원하는 상품을 주문하세요!")
 
 col1, col2 = st.columns([1, 1])
 
